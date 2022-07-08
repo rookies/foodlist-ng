@@ -39,6 +39,9 @@ class Item(ItemBase):
     name: str
     created_at: datetime
     updated_at: datetime
+    time_until_expired: Optional[timedelta]
+    expired: bool
+    soon_expired: bool
 
     class Config:
         """Configuration for the schema."""

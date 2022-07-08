@@ -27,8 +27,11 @@ function request(method: string, path: string, json_data: object | null = null) 
 }
 
 export default {
-  list_items() {
-    return request("GET", "/items");
+  list_items(params: object) {
+    const query_string = Object.keys(params).map((key) => {
+      return encodeURIComponent(key) + "=" + encodeURIComponent(params[key])
+    }).join("&");
+    return request("GET", "/items?" + query_string);
   },
   delete_item(id: number) {
     return request("DELETE", "/items/" + id);

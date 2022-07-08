@@ -2,7 +2,7 @@
 """
 This file contains all database models.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import Column, Text, Integer, Date, Interval, Boolean, DateTime
 from .database import Base
 
@@ -33,19 +33,19 @@ class Item(Base):
     # TODO: reference to inventory
 
     @property
-    def time_until_spoiled(self):
+    def time_until_expired(self):
         if not self.best_before:
             return None
-        return self.best_before - timezone.now().date()
+        return self.best_before - datetime.now().date()
 
     @property
-    def spoiled(self):
+    def expired(self):
         if not self.best_before:
             return False
-        return (self.remainingTime < timedelta(0))
+        return (self.time_until_expired < timedelta(0))
 
     @property
-    def soon_spoiled(self):
+    def soon_expired(self):
         if not self.best_before:
             return False
-        return (self.remainingTime < self.expire_warning)
+        return (self.time_until_expired < self.expire_warning)
