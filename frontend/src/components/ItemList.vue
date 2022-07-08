@@ -36,7 +36,7 @@ const presets = {
 };
 
 const current_preset = ref("consuming");
-const items = ref(null);
+const item_groups = ref(null);
 const item_refs = ref([]);
 
 function get_preset() {
@@ -56,8 +56,33 @@ function get_item_color_class(item: object) {
   return "";
 }
 
+function group_items(items: object[], tag_category: string) {
+  const groups = new Map();
+  for (const item of items) {
+    let group = "";
+    if (tag_category) {
+      /* TODO: Group using given tag_category */
+      group = item.quantity.toString();
+    }
+
+    if (!groups.has(group)) {
+      groups.set(group, {
+        title: group,
+        items: [],
+      });
+    }
+
+    groups.get(group).items.push(item);
+  }
+
+  return groups;
+}
+
 function load_items() {
-  return API.list_items(get_preset().params).then((data) => (items.value = data));
+  return API.list_items(get_preset().params).then((data) => {
+    /* TODO: Pass tag_category */
+    item_groups.value = group_items(data);
+  });
 }
 
 function delete_item(id: number) {
@@ -88,106 +113,117 @@ onMounted(load_items);
 </script>
 
 <template>
-  <div v-if="items === null">Loading...</div>
+  <div v-if="item_groups === null">Loading...</div>
 
-  <div v-else-if="items.length == 0">
+  <div v-else-if="item_groups.length == 0">
     Click <em>Add</em>, to add categories or food.
   </div>
 
-  <div v-else class="list-group">
-    <div
-      v-for="item in items"
-      :key="item.id"
-      :data-id="item.id"
-      ref="item_refs"
-      class="list-group-item"
-      :class="get_item_color_class(item)"
-    >
-      <div class="float-left">
-        <s v-if="get_preset().style.strikethrough_empty && item.quantity == 0">{{ item.name }}</s>
-        <span v-else>{{ item.name }}</span>
-        <br />
-        <small class="text-muted">
-          {{ item.quantity }} / {{ item.min_quantity }}
-          <span v-if="item.temporary_additional_min_quantity">+ {{ item.temporary_additional_min_quantity }}</span>
-          <span v-if="item.best_before && item.quantity"> &ndash; {{ item.best_before }}</span>
-        </small>
-      </div>
-      <div class="float-right">
-        <div class="dropleft">
-          <button
-            class="btn btn-secondary dropdown-toggle"
-            type="button"
-            data-toggle="dropdown"
-          ></button>
-          <div class="dropdown-menu">
-            <div class="dropdown-item btn-group" role="group">
+  <div v-else v-for="[key, group] in item_groups" :key="key">
+    <h5 v-if="group.title">{{ group.title }}</h5>
+    <div class="list-group">
+      <div
+        v-for="item in group.items"
+        :key="item.id"
+        :data-id="item.id"
+        ref="item_refs"
+        class="list-group-item"
+        :class="get_item_color_class(item)"
+      >
+        <div class="float-left">
+          <s
+            v-if="get_preset().style.strikethrough_empty && item.quantity == 0"
+          >
+            {{ item.name }}
+          </s>
+          <span v-else>{{ item.name }}</span>
+          <br />
+          <small class="text-muted">
+            {{ item.quantity }} / {{ item.min_quantity }}
+            <span v-if="item.temporary_additional_min_quantity">
+              + {{ item.temporary_additional_min_quantity }}
+            </span>
+            <span v-if="item.best_before && item.quantity">
+              &ndash; {{ item.best_before }}
+            </span>
+          </small>
+        </div>
+        <div class="float-right">
+          <div class="dropleft">
+            <button
+              class="btn btn-secondary dropdown-toggle"
+              type="button"
+              data-toggle="dropdown"
+            ></button>
+            <div class="dropdown-menu">
+              <div class="dropdown-item btn-group" role="group">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  :disabled="item.quantity === 0"
+                  @click="set_quantity(item.id, 0)"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  v-for="n in 3"
+                  :disabled="item.quantity < n"
+                  :key="n"
+                  @click="set_quantity(item.id, item.quantity - n)"
+                >
+                  -{{ n }}
+                </button>
+              </div>
+              <div class="dropdown-item btn-group" role="group">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-success"
+                  v-for="n in 4"
+                  :key="n"
+                  @click="set_quantity(item.id, item.quantity + n)"
+                >
+                  +{{ n }}
+                </button>
+              </div>
+              <div class="dropdown-divider"></div>
               <button
-                type="button"
-                class="btn btn-sm btn-outline-danger"
-                :disabled="item.quantity === 0"
-                @click="set_quantity(item.id, 0)"
+                class="dropdown-item"
+                @click="update_item(item.id, { temporary_additional_min_quantity: item.temporary_additional_min_quantity + 1 })"
               >
-                0
+                Add to shopping
               </button>
               <button
-                type="button"
-                class="btn btn-sm btn-outline-danger"
-                v-for="n in 3"
-                :disabled="item.quantity < n"
-                :key="n"
-                @click="set_quantity(item.id, item.quantity - n)"
+                class="dropdown-item"
+                v-if="item.temporary_additional_min_quantity > 0"
+                @click="update_item(item.id, { temporary_additional_min_quantity: 0 })"
               >
-                -{{ n }}
+                Remove from shopping ({{ item.temporary_additional_min_quantity }})
+              </button>
+              <button
+                class="dropdown-item"
+                v-if="!item.hidden_on_shopping"
+                @click="update_item(item.id, { hidden_on_shopping: true })"
+              >
+                Hide from shopping
+              </button>
+              <button
+                class="dropdown-item"
+                v-if="item.hidden_on_shopping"
+                @click="update_item(item.id, { hidden_on_shopping: false })"
+              >
+                Unhide from shopping
+              </button>
+              <button class="dropdown-item">Edit</button>
+              <div class="dropdown-divider"></div>
+              <button
+                class="dropdown-item"
+                @click="delete_item(item.id)"
+              >
+                Delete
               </button>
             </div>
-            <div class="dropdown-item btn-group" role="group">
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-success"
-                v-for="n in 4"
-                :key="n"
-                @click="set_quantity(item.id, item.quantity + n)"
-              >
-                +{{ n }}
-              </button>
-            </div>
-            <div class="dropdown-divider"></div>
-            <button
-              class="dropdown-item"
-              @click="update_item(item.id, { temporary_additional_min_quantity: item.temporary_additional_min_quantity + 1 })"
-            >
-              Add to shopping
-            </button>
-            <button
-              class="dropdown-item"
-              v-if="item.temporary_additional_min_quantity > 0"
-              @click="update_item(item.id, { temporary_additional_min_quantity: 0 })"
-            >
-              Remove from shopping ({{ item.temporary_additional_min_quantity }})
-            </button>
-            <button
-              class="dropdown-item"
-              v-if="!item.hidden_on_shopping"
-              @click="update_item(item.id, { hidden_on_shopping: true })"
-            >
-              Hide from shopping
-            </button>
-            <button
-              class="dropdown-item"
-              v-if="item.hidden_on_shopping"
-              @click="update_item(item.id, { hidden_on_shopping: false })"
-            >
-              Unhide from shopping
-            </button>
-            <button class="dropdown-item">Edit</button>
-            <div class="dropdown-divider"></div>
-            <button
-              class="dropdown-item"
-              @click="delete_item(item.id)"
-            >
-              Delete
-            </button>
           </div>
         </div>
       </div>
