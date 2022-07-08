@@ -1,0 +1,9 @@
+fastapi == 0.70.1
+uvicorn == 0.16.0
+# For connection to a PostgreSQL database:
+SQLAlchemy == 1.4.29
+psycopg2-binary == 2.9.2
+# For reading configuration from environment variables:
+environ-config == 21.2.0
+# For database migrations:
+alembic == 1.7.5
