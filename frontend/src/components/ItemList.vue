@@ -15,9 +15,8 @@ function delete_item(id: number) {
   }
 }
 
-function set_quantity(id: number, quantity: number) {
-  /* TODO: Check for deletion! */
-  return API.update_item(id, { quantity: quantity })
+function update_item(id: number, values: object) {
+  return API.update_item(id, values)
     .then(load_items)
     .then(function () {
       for (const item of item_refs.value) {
@@ -27,6 +26,11 @@ function set_quantity(id: number, quantity: number) {
         }
       }
     });
+}
+
+function set_quantity(id: number, quantity: number) {
+  /* TODO: Check for deletion! */
+  return update_item(id, { quantity: quantity });
 }
 
 onMounted(load_items);
@@ -83,11 +87,41 @@ onMounted(load_items);
             </button>
           </div>
           <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="#">Add to shopping</a>
-          <a class="dropdown-item" href="#">Hide from shopping</a>
-          <a class="dropdown-item" href="#">Edit</a>
+          <button
+            class="dropdown-item"
+            @click="update_item(item.id, { temporary_additional_min_quantity: item.temporary_additional_min_quantity + 1 })"
+          >
+            Add to shopping
+          </button>
+          <button
+            class="dropdown-item"
+            v-if="item.temporary_additional_min_quantity > 0"
+            @click="update_item(item.id, { temporary_additional_min_quantity: 0 })"
+          >
+            Remove from shopping ({{ item.temporary_additional_min_quantity }})
+          </button>
+          <button
+            class="dropdown-item"
+            v-if="!item.hidden_on_shopping"
+            @click="update_item(item.id, { hidden_on_shopping: true })"
+          >
+            Hide from shopping
+          </button>
+          <button
+            class="dropdown-item"
+            v-if="item.hidden_on_shopping"
+            @click="update_item(item.id, { hidden_on_shopping: false })"
+          >
+            Unhide from shopping
+          </button>
+          <button class="dropdown-item">Edit</button>
           <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="#" @click="delete_item(item.id)">Delete</a>
+          <button
+            class="dropdown-item"
+            @click="delete_item(item.id)"
+          >
+            Delete
+          </button>
         </div>
       </div>
     </div>
