@@ -9,7 +9,7 @@ from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from . import crud, schemas
+from . import crud, schemas, enums
 from .database import get_database
 
 app = FastAPI(
@@ -26,11 +26,11 @@ logger = logging.getLogger("foodlist.main")
 
 
 @app.get("/items", response_model=List[schemas.Item])
-async def list_items(db: Session = Depends(get_database)):
+async def list_items(order_by: enums.ItemOrderBy = enums.ItemOrderBy.id, order_direction: enums.OrderDirection = enums.OrderDirection.ASC, db: Session = Depends(get_database)):
     """
     Lists all items.
     """
-    return crud.get_items(db)
+    return crud.get_items(db, order_by, order_direction)
 
 
 @app.post("/items", response_model=schemas.Item)

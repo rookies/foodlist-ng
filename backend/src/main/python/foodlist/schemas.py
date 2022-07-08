@@ -16,7 +16,7 @@ class ItemBase(BaseModel):
     temporary_additional_min_quantity: conint(ge=0) = 0
     best_before: Optional[date]
     expire_warning: Optional[timedelta] = timedelta(days=7)
-    keep_if_zero: bool = True
+    keep_if_zero: bool = True  # TODO: Always true?
     hidden_on_shopping: bool = False
 
 
