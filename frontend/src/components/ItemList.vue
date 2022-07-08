@@ -3,20 +3,30 @@ import { ref, onMounted } from "vue";
 import API from "../api/main.ts";
 
 const items = ref(null);
+const item_refs = ref([]);
 
 function load_items() {
-  API.list_items().then((data) => (items.value = data));
+  return API.list_items().then((data) => (items.value = data));
 }
 
 function delete_item(id: number) {
   if (confirm("Really delete the item?")) {
-    API.delete_item(id).then(load_items);
+    return API.delete_item(id).then(load_items);
   }
 }
 
 function set_quantity(id: number, quantity: number) {
   /* TODO: Check for deletion! */
-  API.update_item(id, { quantity: quantity }).then(load_items);
+  return API.update_item(id, { quantity: quantity })
+    .then(load_items)
+    .then(function () {
+      for (const item of item_refs.value) {
+        if (item.dataset.id == id) {
+          item.scrollIntoView({ behavior: "smooth" });
+          break;
+        }
+      }
+    });
 }
 
 onMounted(load_items);
@@ -30,7 +40,7 @@ onMounted(load_items);
   </div>
 
   <div v-else class="list-group">
-    <div v-for="item in items" :key="item.id" class="list-group-item" href="#">
+    <div v-for="item in items" :key="item.id" :data-id="item.id" ref="item_refs" class="list-group-item">
       {{ item.quantity }}&times; {{ item.name }}
       <div class="dropdown">
         <button
