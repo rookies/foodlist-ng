@@ -2,37 +2,62 @@
 import { ref, onMounted } from "vue";
 import API from "../api/main.ts";
 
-const params = ref({
-  order_by: "quantity",
-  order_direction: "desc",
-  custom_filter: "shopping",
-});
-const style = ref({
-  strikethrough_empty: true,
-  colors: {
-    empty: "dark",
-    expired: "danger",
-    soon_expired: "warning",
+const presets = {
+  consuming: {
+    params: {
+      order_by: "quantity",
+      order_direction: "desc",
+      custom_filter: "",
+    },
+    style: {
+      strikethrough_empty: true,
+      colors: {
+        empty: "dark",
+        expired: "danger",
+        soon_expired: "warning",
+      },
+    },
   },
-});
+  shopping: {
+    params: {
+      order_by: "id",
+      order_direction: "asc",
+      custom_filter: "shopping",
+    },
+    style: {
+      strikethrough_empty: false,
+      colors: {
+        empty: "",
+        expired: "",
+        soon_expired: "",
+      },
+    },
+  },
+};
+
+const current_preset = ref("consuming");
 const items = ref(null);
 const item_refs = ref([]);
 
+function get_preset() {
+  return presets[current_preset.value];
+}
+
 function get_item_color_class(item: object) {
   if (item.quantity == 0) {
-    return "list-group-item-" + style.value.colors.empty;
+    return "list-group-item-" + get_preset().style.colors.empty;
   }
   if (item.expired) {
-    return "list-group-item-" + style.value.colors.expired;
+    return "list-group-item-" + get_preset().style.colors.expired;
   }
   if (item.soon_expired) {
-    return "list-group-item-" + style.value.colors.soon_expired;
+    return "list-group-item-" + get_preset().style.colors.soon_expired;
   }
   return "";
 }
 
 function load_items() {
-  return API.list_items(params.value).then((data) => (items.value = data));
+  return API.list_items(get_preset().params).then((data) => (items.value = data));
 }
 
 function delete_item(id: number) {
@@ -79,7 +104,7 @@ onMounted(load_items);
       :class="get_item_color_class(item)"
     >
       <div class="float-left">
-        <s v-if="style.strikethrough_empty && item.quantity == 0">{{ item.name }}</s>
+        <s v-if="get_preset().style.strikethrough_empty && item.quantity == 0">{{ item.name }}</s>
         <span v-else>{{ item.name }}</span>
         <br />
         <small class="text-muted">
