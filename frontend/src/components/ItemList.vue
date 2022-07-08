@@ -5,6 +5,7 @@ import API from "../api/main.ts";
 const params = ref({
   order_by: "quantity",
   order_direction: "desc",
+  custom_filter: "shopping",
 });
 const style = ref({
   strikethrough_empty: true,

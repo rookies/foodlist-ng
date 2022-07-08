@@ -4,12 +4,13 @@ This is the main file of the foodlist-ng API Server.
 """
 import uuid
 import logging
-from typing import List
+from typing import List, Optional
 from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from . import crud, schemas, enums
+from . import crud, schemas, enums, models
 from .database import get_database
 
 app = FastAPI(
@@ -26,11 +27,20 @@ logger = logging.getLogger("foodlist.main")
 
 
 @app.get("/items", response_model=List[schemas.Item])
-async def list_items(order_by: enums.ItemOrderBy = enums.ItemOrderBy.id, order_direction: enums.OrderDirection = enums.OrderDirection.ASC, db: Session = Depends(get_database)):
+async def list_items(order_by: enums.ItemOrderBy = enums.ItemOrderBy.id, order_direction: enums.OrderDirection = enums.OrderDirection.ASC, custom_filter: Optional[str] = None, db: Session = Depends(get_database)):
     """
     Lists all items.
     """
-    return crud.get_items(db, order_by, order_direction)
+    filters = {
+        "shopping": [
+            or_(
+                models.Item.quantity < models.Item.min_quantity,
+                models.Item.temporary_additional_min_quantity > 0,
+            ),
+            models.Item.hidden_on_shopping == False,
+        ],
+    }
+    return crud.get_items(db, order_by, order_direction, filters.get(custom_filter, []))
 
 
 @app.post("/items", response_model=schemas.Item)

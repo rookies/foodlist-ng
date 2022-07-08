@@ -3,12 +3,16 @@
 This file implements create, read, update, and delete operations for database
 objects.
 """
+from typing import Optional
 from sqlalchemy.orm import Session
 from . import models, schemas, enums
 
 
-def get_items(db: Session, order_by: enums.ItemOrderBy, order_direction: enums.OrderDirection):
+def get_items(db: Session, order_by: enums.ItemOrderBy, order_direction: enums.OrderDirection, filters: Optional[list] = None):
     q = db.query(models.Item)
+
+    if filters is not None:
+        q = q.filter(*filters)
 
     if order_direction == enums.OrderDirection.DESC:
         q = q.order_by(getattr(models.Item, order_by.value).desc())
