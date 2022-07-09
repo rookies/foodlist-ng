@@ -15,8 +15,8 @@ categories = {i["id"]: i["name"] for i in data["categories"]}
 for item in data["foods"]:
     res = requests.request("POST", create_item_url, json=item)
     print(res)
-    item_id = res.json()["id"]
-    print(requests.request("POST", create_tag_url.format(
-        id=item_id,
-        tag=urllib.parse.quote(f"type:{categories[item['category_id']]}"),
-    )))
+    #item_id = res.json()["id"]
+    #print(requests.request("POST", create_tag_url.format(
+    #    id=item_id,
+    #    tag=urllib.parse.quote(f"type:{categories[item['category_id']]}"),
+    #)))

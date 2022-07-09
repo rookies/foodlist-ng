@@ -39,4 +39,10 @@ export default {
   update_item(id: number, values: object) {
     return request("PATCH", "/items/" + id, values);
   },
+  create_tag(item_id: number, tag: string) {
+    return request("POST", "/items/" + item_id + "/tags/" + encodeURIComponent(tag));
+  },
+  delete_tag(item_id: number, tag: string) {
+    return request("DELETE", "/items/" + item_id + "/tags/" + encodeURIComponent(tag));
+  },
 };

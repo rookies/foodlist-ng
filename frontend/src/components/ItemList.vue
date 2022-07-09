@@ -84,10 +84,19 @@ function group_items(items: object[], tag_category: string) {
   return groups;
 }
 
+function scroll_to_item(id: number) {
+  for (const item of item_refs.value) {
+    if (item.dataset.id == id) {
+      item.scrollIntoView({ behavior: "smooth" });
+      break;
+    }
+  }
+}
+
 function load_items() {
   return API.list_items(get_preset().params).then((data) => {
     /* TODO: Pass tag_category */
-    item_groups.value = group_items(data, "type");
+    item_groups.value = group_items(data, "loc");
   });
 }
 
@@ -100,19 +109,30 @@ function delete_item(id: number) {
 function update_item(id: number, values: object) {
   return API.update_item(id, values)
     .then(load_items)
-    .then(function () {
-      for (const item of item_refs.value) {
-        if (item.dataset.id == id) {
-          item.scrollIntoView({ behavior: "smooth" });
-          break;
-        }
-      }
-    });
+    .then(() => scroll_to_item(id));
 }
 
 function set_quantity(id: number, quantity: number) {
   /* TODO: Check for deletion! */
   return update_item(id, { quantity: quantity });
+}
+
+function create_tag(item_id: number, tag: string) {
+  return API.create_tag(item_id, tag)
+    .then(load_items);
+  /*  .then(() => scroll_to_item(item_id));*/
+  /* TODO: Add option to disable scrolling */
+}
+
+function delete_tag(item_id: number, tag: string) {
+  return API.delete_tag(item_id, tag)
+    .then(load_items)
+    .then(() => scroll_to_item(item_id));
+}
+
+function create_tag_submit(item_id: number, ev: event) {
+  create_tag(item_id, ev.target.elements[0].value);
+  ev.target.elements[0].value = "";
 }
 
 onMounted(load_items);
@@ -155,7 +175,13 @@ onMounted(load_items);
           </small>
           <span v-if="get_preset().style.show_tags">
             <br />
-            <span v-for="tag in item.tags" :key="tag" class="badge badge-secondary">{{ tag }}</span>
+            <span v-for="tag in item.tags" :key="tag" class="badge badge-secondary">
+              {{ tag }}
+              <a href="#" @click.prevent="delete_tag(item.id, tag)">&times;</a>
+            </span>
+            <form @submit.prevent="create_tag_submit(item.id, $event)">
+              <input type="text" class="form-control form-control-sm" />
+            </form>
           </span>
         </div>
         <div class="float-right">
