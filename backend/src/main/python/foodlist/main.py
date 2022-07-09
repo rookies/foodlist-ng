@@ -59,10 +59,28 @@ async def delete_item(id: int, db: Session = Depends(get_database)):
     crud.delete_item_by_id(db, id)
 
 
-@app.patch("/items/{id}")
+@app.patch("/items/{id}", response_model=schemas.Item)
 async def update_item(id: int, item: schemas.ItemUpdate, db: Session = Depends(get_database)):
     """
     Updates the item with the given ID.
     """
     crud.update_item_by_id(db, id, **item.dict(exclude_unset=True))
+    return crud.get_item_by_id(db, id)
+
+
+@app.post("/items/{id}/tags/{tag}", response_model=schemas.Item)
+async def add_item_tag(id: int, tag: str, db: Session = Depends(get_database)):
+    """
+    Adds a tag to the item with the given ID.
+    """
+    crud.create_item_tag(db, id, tag)
+    return crud.get_item_by_id(db, id)
+
+
+@app.delete("/items/{id}/tags/{tag}", response_model=schemas.Item)
+async def add_item_tag(id: int, tag: str, db: Session = Depends(get_database)):
+    """
+    Removes a tag from the item with the given ID.
+    """
+    crud.delete_item_tag(db, id, tag)
     return crud.get_item_by_id(db, id)

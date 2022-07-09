@@ -11,6 +11,7 @@ const presets = {
     },
     style: {
       strikethrough_empty: true,
+      show_tags: true,
       colors: {
         empty: "dark",
         expired: "danger",
@@ -26,6 +27,7 @@ const presets = {
     },
     style: {
       strikethrough_empty: false,
+      show_tags: false,
       colors: {
         empty: "",
         expired: "",
@@ -61,8 +63,12 @@ function group_items(items: object[], tag_category: string) {
   for (const item of items) {
     let group = "";
     if (tag_category) {
-      /* TODO: Group using given tag_category */
-      group = item.quantity.toString();
+      for (const tag of item.tags) {
+        if (tag.startsWith(tag_category + ":")) {
+          group = tag.slice(tag_category.length + 1);
+          break;
+        }
+      }
     }
 
     if (!groups.has(group)) {
@@ -81,7 +87,7 @@ function group_items(items: object[], tag_category: string) {
 function load_items() {
   return API.list_items(get_preset().params).then((data) => {
     /* TODO: Pass tag_category */
-    item_groups.value = group_items(data);
+    item_groups.value = group_items(data, "type");
   });
 }
 
@@ -147,6 +153,10 @@ onMounted(load_items);
               &ndash; {{ item.best_before }}
             </span>
           </small>
+          <span v-if="get_preset().style.show_tags">
+            <br />
+            <span v-for="tag in item.tags" :key="tag" class="badge badge-secondary">{{ tag }}</span>
+          </span>
         </div>
         <div class="float-right">
           <div class="dropleft">

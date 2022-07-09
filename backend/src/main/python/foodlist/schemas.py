@@ -3,9 +3,10 @@
 This file contains the schemas used for API requests and responses.
 """
 import uuid
-from typing import Optional
+from typing import Optional, List, Any
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel, conint
+from pydantic.utils import GetterDict
 
 
 class ItemBase(BaseModel):
@@ -32,6 +33,17 @@ class ItemUpdate(ItemBase):
     name: Optional[str]
 
 
+class ItemGetter(GetterDict):
+    def get(self, key: str, default: Any) -> Any:
+        value = super().get(key, default)
+
+        if key == "tags":
+            return [t.name for t in value]
+
+        return value
+
+
+
 class Item(ItemBase):
     """Schema for returning an item."""
 
@@ -42,8 +54,10 @@ class Item(ItemBase):
     time_until_expired: Optional[timedelta]
     expired: bool
     soon_expired: bool
+    tags: List[str]
 
     class Config:
         """Configuration for the schema."""
 
         orm_mode = True
+        getter_dict = ItemGetter

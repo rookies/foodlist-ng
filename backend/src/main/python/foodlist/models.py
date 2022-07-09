@@ -3,7 +3,8 @@
 This file contains all database models.
 """
 from datetime import datetime, timedelta
-from sqlalchemy import Column, Text, Integer, Date, Interval, Boolean, DateTime
+from sqlalchemy import Column, Text, Integer, Date, Interval, Boolean, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import relationship
 from .database import Base
 
 
@@ -30,6 +31,8 @@ class Item(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
     hidden_on_shopping = Column(Boolean, nullable=False)
 
+    tags = relationship("ItemTag", back_populates="item", cascade="all, delete-orphan")
+
     # TODO: reference to inventory
 
     @property
@@ -49,3 +52,18 @@ class Item(Base):
         if not self.best_before:
             return False
         return (self.time_until_expired < self.expire_warning)
+
+
+class ItemTag(Base):
+    __tablename__ = "foodlist_item_tags"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    name = Column(Text, nullable=False)
+
+    item_id = Column(Integer, ForeignKey("foodlist_items.id", ondelete="CASCADE"), nullable=False)
+    item = relationship("Item", back_populates="tags")
+
+    __table_args__ = (
+        UniqueConstraint("name", "item_id"),
+    )
+    # TODO: Add name?

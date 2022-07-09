@@ -43,3 +43,14 @@ def delete_item_by_id(db: Session, id: int):
 def update_item_by_id(db: Session, id: int, **kwargs):
     db.query(models.Item).filter(models.Item.id == id).update(kwargs)
     db.commit()
+
+
+def create_item_tag(db: Session, item_id: int, tag_name: str):
+    db_tag = models.ItemTag(item_id=item_id, name=tag_name)
+    db.add(db_tag)
+    db.commit()
+
+
+def delete_item_tag(db: Session, item_id: int, tag_name: str):
+    db.query(models.ItemTag).filter(models.ItemTag.item_id == item_id, models.ItemTag.name == tag_name).delete()
+    db.commit()
