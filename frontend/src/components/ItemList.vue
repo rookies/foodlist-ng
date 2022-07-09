@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+
 import API from "../api/main.ts";
+
+const route = useRoute();
 
 const presets = {
   consuming: {
@@ -11,7 +15,7 @@ const presets = {
     },
     style: {
       strikethrough_empty: true,
-      show_tags: true,
+      show_tags: false,
       colors: {
         empty: "dark",
         expired: "danger",
@@ -35,14 +39,33 @@ const presets = {
       },
     },
   },
+  editing: {
+    params: {
+      order_by: "id",
+      order_direction: "asc",
+      custom_filter: "",
+    },
+    style: {
+      strikethrough_empty: false,
+      show_tags: true,
+      colors: {
+        empty: "dark",
+        expired: "danger",
+        soon_expired: "warning",
+      },
+    },
+  },
 };
 
-const current_preset = ref("consuming");
+watch(() => route.params.preset, async (new_preset, old_preset) => {
+  load_items();
+});
+
 const item_groups = ref(null);
 const item_refs = ref([]);
 
 function get_preset() {
-  return presets[current_preset.value];
+  return presets[route.params.preset];
 }
 
 function get_item_color_class(item: object) {
@@ -94,6 +117,7 @@ function scroll_to_item(id: number) {
 }
 
 function load_items() {
+  item_groups.value = null;
   return API.list_items(get_preset().params).then((data) => {
     /* TODO: Pass tag_category */
     item_groups.value = group_items(data, "loc");
